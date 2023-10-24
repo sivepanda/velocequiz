@@ -2,6 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		<script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		%sveltekit.head%
@@ -20,6 +21,13 @@
 			'opsz' 24
 		}
 		:root {
+			--clay-250: #ac5050;
+			--bermuda-250: #4ea74e;
+			--forest-200: #99ba99;
+			--forest-250: #698169;
+			--forest-350: #344034;
+			--forest-400: #222822;
+			--forest-500: #1d221d;
 			--gray-200: #cfcfcf;
 			--gray-250: #c1c1c1;
 			--midnight-350: #343440;
@@ -35,12 +43,41 @@
 		p {
 			font-family: var(--body);
 		}
+		button {
+			background-color: var(--forest-200);
+			color: var(--midnight-500);
+			border: 5px solid black;
+			border-radius: 90px;
+			font-family: var(--head);
+			font-size: 3svh;
+			padding: 1svh;
+			padding-left: 2vw;
+			padding-right: 2vw;
+			transition: 100ms all cubic-bezier(.12,.59,.85,.99);
+
+		}
+		button:hover {
+			background-color: var(--forest-250);
+			padding: .7svh;
+			margin: .3svh;
+			margin-left: .3vw;
+			margin-right: .3vw;
+			padding-left: 1.7vw;
+			padding-right: 1.7vw;
+			transition: 200ms all cubic-bezier(.12,.59,.85,.99);
+		}
 		body, .page {
 			margin: 0px;
 			padding: 0px;
 			left: 0px;
 			top: 0px;
 			background-color: var(--midnight-500);
+		}
+		.visible {
+        display: block;
+		}
+		.invisible {
+			display: none;
 		}
 	</style>
 </html>

@@ -1,6 +1,7 @@
 <script type='ts'>
- 
     export let question = '{ "question": {"content": "Which of the following security measures is not completely effective against attacks like phishing?","responses": [{"content": "A. 2FA", "correct": false}, {"content": "B. Enhanced Logging resources", "correct": false}, {"content": "C. Changing passwords of privileged accounts", "correct": false}, {"content": "D. All of the above", "correct": true}]}}';
+    export let questionNumber = 1;
+
     var questionJSON = JSON.parse(question);
     $: questionJSON = JSON.parse(question)
     console.log(questionJSON.question.responses);
@@ -9,7 +10,7 @@
 </script>
 
 <div class="outer">
-    <div class="question">{questionJSON.question.content}</div>
+    <div class="question">{questionNumber}&period;&nbsp;{questionJSON.question.content}</div>
     <div class="responses">
         {#each questionJSON.question.responses as res}
             <span class='response {res.correct ? 'correct': 'incorrect'}'>
@@ -78,11 +79,11 @@
         transition: all ease-in-out 100ms;
     }
     .correct:hover {
-        color: #4ea74e;
+        color: var(--bermuda-250);
         transition: all ease-in-out 200ms;
     }
     .incorrect:hover {
-        color: #ac5050;
+        color:var(--clay-250);
         transition: all ease-in-out 200ms;
     }
 </style>

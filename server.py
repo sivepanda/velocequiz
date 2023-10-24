@@ -56,8 +56,8 @@ def get_qa(pdf_path):
         ```{page_text}```
         """
 
-        response = get_completion(prompt)
-        # response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "To disclose or disrupt", "correct": true},{"content": "To entertain or educate", "correct": false},{"content": "To create or innovate", "correct": false},{"content": "To support or assist", "correct": false}]}}'
+        # response = get_completion(prompt)
+        response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "To diisclose or disrupt", "correct": true},{"content": "To entertain or educate", "correct": false},{"content": "To create or innovate", "correct": false},{"content": "To support or assist", "correct": false}]}}'
         output.append(response)
         print("\n\n\n", response)
 
