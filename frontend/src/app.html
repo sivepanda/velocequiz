@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		%sveltekit.head%
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">%sveltekit.body%</div>
+	</body>
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Inter:wght@600&family=Open+Sans&family=Material+Symbols+Outlined:wght@400&display=swap');
+    
+		.material-symbols-outlined {
+			font-variation-settings:
+			'FILL' 0,
+			'wght' 400,
+			'GRAD' 0,
+			'opsz' 24
+		}
+		:root {
+			--gray-200: #cfcfcf;
+			--gray-250: #c1c1c1;
+			--midnight-350: #343440;
+			--midnight-400: #222228;
+			--midnight-500: #1d1d22;
+			--body: 'Open Sans', 'Helvetica', sans-serif;
+			--head: 'Inter', sans-serif;
+			color: white;
+		}
+		h1 {
+			font-family: var(--head);
+		}
+		p {
+			font-family: var(--body);
+		}
+		body, .page {
+			margin: 0px;
+			padding: 0px;
+			left: 0px;
+			top: 0px;
+			background-color: var(--midnight-500);
+		}
+	</style>
+</html>
