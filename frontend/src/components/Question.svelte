@@ -24,6 +24,20 @@
 
 
 <style>
+    @media only print {
+        .outer {
+            width: 100% !important;
+        }
+        .question {
+            width: 100% !important;
+            box-shadow: none !important;
+            padding: 0px !important;
+        }
+        .response span {
+            opacity: 1 !important;
+            visibility: visible;
+        }
+    }
     .outer {
         background-color: var(--midnight-400);
         width: 50vw;

@@ -49,15 +49,16 @@ def get_qa(pdf_path):
         \"content\": \"What is 2+2?\",
         \"responses\": \[\{{\"content\: A. 4, \"correct": true\}}, \{{\"content\": B. 7\}}\, \{{\"content\": C. 1\}}\,
         \{{\"content\": D. 22\}}\]\n}}\n}}\n\nWhile questions must be based on the text, 
-        questions must be able to be answered without direct  access to the text - quiz 
-        on understanding concepts. Questions cannot have a basis on what information  is or 
-        is not included in the text; only on the concepts covered in the text. If there is not 
+        questions must be able to be answered without direct access to the text - quiz 
+        on understanding concepts. Questions cannot have a basis on what information is or 
+        is not included in the text; only on the concepts covered in the text, and therefore questions 
+        must not contain the phrase "in the text" or any of its variations. If there is not 
         enough information to generate a question, do not generate a question. Instead, reply with "null" \
         ```{page_text}```
         """
 
-        # response = get_completion(prompt)
-        response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "To diisclose or disrupt", "correct": true},{"content": "To entertain or educate", "correct": false},{"content": "To create or innovate", "correct": false},{"content": "To support or assist", "correct": false}]}}'
+        response = get_completion(prompt)
+        # response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "To diisclose or disrupt", "correct": true},{"content": "To entertain or educate", "correct": false},{"content": "To create or innovate", "correct": false},{"content": "To support or assist", "correct": false}]}}'
         output.append(response)
         print("\n\n\n", response)
 
