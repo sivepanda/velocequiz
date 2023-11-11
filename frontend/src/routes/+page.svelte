@@ -5,19 +5,25 @@
 
     let files: FileList;
     let filename: string = '';
+    let uploadFilename: string = '';
     let questions = []
     var questionNumber = 0;
     let submitReady = false;
     let submitted = false;
     let questionsGenerated = false;
+    let showAnswers = false;
 
-    $: filename = files? files.item('0').name : '';
-    $: submitReady = filename != '';
+    $: uploadFilename = files ? files.item('0').name : '';
+    $: filename;
+    $: submitReady = uploadFilename != '';
     $: questions;
     $: submitted;
     $: questionsGenerated;
+    $: showAnswers;
 
     const upload = async () => {
+        // questions = []
+
         if(!files) {
             console.log('nothing')
             return
@@ -41,6 +47,7 @@
         submitted = false
         questionsGenerated = true
         files = null
+        filename = uploadFilename
         questions = response.data
 
         // response.data.forEach(question => {
@@ -63,12 +70,12 @@
         
         <h1>Upload your PDF</h1>
         <label class="file-upload">
-            <input type="file" id="file-upload" accept="pdf" bind:files />
+            <input type="file" id="file-upload" accept=".pdf" bind:files />
             <span class="material-symbols-outlined">
                 upload_file
             </span>
         </label>
-        <p>{filename}</p>
+        <p>{uploadFilename}</p>
 
         <button class='{submitReady ? 'visible' : 'invisible'}' on:click={upload}>Submit</button>
         
@@ -78,7 +85,20 @@
     
     <div>
         <div class="questions {questionsGenerated ? 'visible' : 'invisible'}">
-            <h1>Generated Questions - {filename}</h1>
+            <h1>Generated Questions - <span>{filename}</span></h1>
+            <div class="sub">
+                <button on:click={() => window.print()}>Generate PDF</button>
+                <div class="showdiv">
+                    <h3>Show Answers:</h3>
+                    <label class="show-answers">
+                        <input type="checkbox" id="showAns" name="Show Answers" bind:checked={showAnswers}/>
+                        <span class="material-symbols-outlined {showAnswers ? 'visible': 'invisible'}">
+                            done
+                        </span>
+                    </label>
+                </div>
+                
+            </div>
             <!-- <Question questionNumber={(questionNumber += 1)}></Question>
             <Question questionNumber={(questionNumber += 1)}></Question>
             <Question questionNumber={(questionNumber += 1)}></Question>
@@ -86,9 +106,11 @@
             {#each questions as question}
                 {#if question != '"null"'}
                     {@const currentQuestion = increment()}
-                    <Question question={question} questionNumber={(currentQuestion)}></Question>
+                    <Question question={question} showAnswer={showAnswers} questionNumber={(currentQuestion)}></Question>
                 {/if}
             {/each}
+            
+
         </div>
         
     
@@ -114,6 +136,10 @@
             padding: 0px;
             align-self: flex-start;
         }
+        .sub {
+            display: none;
+            visibility: hidden;
+        }
     }
     .uploads {
         display: flex;
@@ -135,20 +161,65 @@
     h1 {
         font-size: 5vh;
     }
+    h1 > span {
+        font-weight: 400;
+    }
+    button {
+        width: 70%;
+        justify-self: start;
+    }
     .questions {
         margin-left: auto;
         margin-right: auto;
         width: 50vw;
     }
-    input[type="file"] {
+    input[type="file"], input[type="checkbox"] {
         display: none;
     }
+    .sub {
+        width: 50vw;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        flex-direction: row;
+        gap: 4vw;
+        align-items: center;
+    }
+    .showdiv {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 10px;
+        justify-self: end;
+    }
+    .show-answers {
+        border-radius: 10px;
+        height: 4.25svh;
+        width: 4.25svh;
+        margin: 2px;
+        border: 2px solid black;
+        background-color: var(--forest-200);
+        color: var(--midnight-500);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: 100ms all cubic-bezier(.12,.59,.85,.99);
+    }
+    .show-answers:hover {
+        margin: 0px;
+        border: 4px solid black;
+        background-color: var(--forest-250);
+        transition: 200ms all cubic-bezier(1,.39,.61,.96);
+    }
+    .show-answers span {
+        font-size: 3svh;
+        user-select: none;
+    }
     .file-upload {
-        margin: calc(.5svh + 5px);
+        border-radius: 10svh;
         height: 14svh;
         width: 14svh;
+        margin: calc(.5svh + 5px);
         border: 5px solid black;
-        border-radius: 10svh;
         background-color: var(--forest-200);
         color: var(--midnight-500);
         display: flex;
@@ -166,6 +237,7 @@
     }
     .file-upload span {
         font-size: 8svh;
+        user-select: none;
         transition: 100ms all cubic-bezier(.12,.59,.85,.99);
     }
     .file-upload:hover span {

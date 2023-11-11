@@ -43,7 +43,7 @@ def get_qa(pdf_path):
 
     for page_text in list_pdf_text:
         prompt = f"""
-        Generate one multi-choice question and its answers for the following text. Each question has 
+        Generate one multi-choice question and corresponding answer choices for the following text. Each question has 
         *four* lettered choices and there is only *one* correct answer.  Return the question as JSON.
         \nA sample response would look like this:\n\n {{ question: {{
         \"content\": \"What is 2+2?\",
@@ -57,8 +57,11 @@ def get_qa(pdf_path):
         ```{page_text}```
         """
 
-        response = get_completion(prompt)
-        # response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "To diisclose or disrupt", "correct": true},{"content": "To entertain or educate", "correct": false},{"content": "To create or innovate", "correct": false},{"content": "To support or assist", "correct": false}]}}'
+        # response = get_completion(prompt)
+        
+        # comment above and uncomment below to use the dummy response that does not contact OpenAI servers
+        response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "A. To disclose or disrupt", "correct": true},{"content": "B. To entertain or educate", "correct": false},{"content": "C. To create or innovate", "correct": false},{"content": "D. To support or assist", "correct": false}]}}'
+        
         output.append(response)
         print("\n\n\n", response)
 

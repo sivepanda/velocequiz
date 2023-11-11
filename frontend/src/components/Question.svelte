@@ -1,6 +1,7 @@
 <script type='ts'>
     export let question = '{ "question": {"content": "Which of the following security measures is not completely effective against attacks like phishing?","responses": [{"content": "A. 2FA", "correct": false}, {"content": "B. Enhanced Logging resources", "correct": false}, {"content": "C. Changing passwords of privileged accounts", "correct": false}, {"content": "D. All of the above", "correct": true}]}}';
     export let questionNumber = 1;
+    export let showAnswer = false;
 
     var questionJSON = JSON.parse(question);
     $: questionJSON = JSON.parse(question)
@@ -13,7 +14,7 @@
     <div class="question">{questionNumber}&period;&nbsp;{questionJSON.question.content}</div>
     <div class="responses">
         {#each questionJSON.question.responses as res}
-            <span class='response {res.correct ? 'correct': 'incorrect'}'>
+            <span class='response {showAnswer ? 'showanswer' : 'noanswer'} {res.correct ? 'correct': 'incorrect'}'>
                 {res.content}
                 <span class="material-symbols-outlined">{res.correct ? 'check': 'close'}</span>
             </span>
@@ -33,9 +34,9 @@
             box-shadow: none !important;
             padding: 0px !important;
         }
-        .response span {
-            opacity: 1 !important;
-            visibility: visible;
+        .noanswer span {
+            opacity: 0 !important;
+            visibility: hidden;
         }
     }
     .outer {
@@ -62,6 +63,10 @@
         font-size: 2svh;
 
         box-shadow: 0px 1px 1px 1px rgba(0, 0, 0, 0.17);
+    }
+    .showanswer span {
+        opacity: 1 !important;
+        visibility: visible;
     }
     .responses {
         margin-left: 4vw;
