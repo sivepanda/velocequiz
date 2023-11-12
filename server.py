@@ -57,10 +57,10 @@ def get_qa(pdf_path):
         ```{page_text}```
         """
 
-        # response = get_completion(prompt)
+        response = get_completion(prompt)
         
         # comment above and uncomment below to use the dummy response that does not contact OpenAI servers
-        response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "A. To disclose or disrupt", "correct": true},{"content": "B. To entertain or educate", "correct": false},{"content": "C. To create or innovate", "correct": false},{"content": "D. To support or assist", "correct": false}]}}'
+        # response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "A. To disclose or disrupt", "correct": true},{"content": "B. To entertain or educate", "correct": false},{"content": "C. To create or innovate", "correct": false},{"content": "D. To support or assist", "correct": false}]}}'
         
         output.append(response)
         print("\n\n\n", response)
