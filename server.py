@@ -7,6 +7,12 @@ from dotenv import load_dotenv
 from flask import Flask, request, flash, redirect, url_for
 from flask_cors import CORS
 
+from langchain.prompts import PromptTemplate
+from langchain.chat_models import ChatOpenAI
+from langchain.chains.openai_functions import (
+    create_structured_output_runnable,
+)
+
 load_dotenv()
 
 openai.api_key = os.getenv("OPENAI_APIKEY")
@@ -15,6 +21,58 @@ app = Flask(__name__)
 
 CORS(app)
 
+# Define the structure of the prompt
+prompt_structure = """
+Read the following text and generate one multiple choice question based on its content. For each question, provide four options (A, B, C, D), only one of which is correct.
+
+Text: 
+{text}
+
+Questions:
+"""
+
+# Create an instance of the PromptTemplate class
+mcq_template = PromptTemplate(
+    template=prompt_structure,
+    input_variables=["text"],
+)
+
+# Defines the JSON Schema to be used to format the answers
+json_schema = {
+    "title": "Person",
+    "description": "Identifying information about a person.",
+    "type": "object",
+    "properties": {
+        "content": {"title": "Content", "description": "The content of the question", "type": "string"},
+        "responses": {
+                "title": "Response",
+                "type": "array",
+                "description": "List of response options",
+                "items": {
+                    "title": "Items",
+                    "type": "object",
+                    "properties": {
+                        "content": {
+                            "type": "string",
+                            "description": "The content of the response"
+                        },
+                        "correct": {
+                            "type": "boolean",
+                            "description": "Indicates if the response is correct"
+                        }
+                    },
+                    "required": ["content", "correct"]
+                }
+            }
+    },
+    "required": ["content", "response"],
+}
+
+# Ensures the output is in a standard JSON format readable by the frontend
+def get_structured_response(prompt, model="gpt-3.5-turbo"):
+    openai_lc = ChatOpenAI(api_key=os.getenv("OPENAI_APIKEY"), model=model, temperature=0)
+    runnable = create_structured_output_runnable(output_schema=json_schema, llm=openai_lc, prompt=mcq_template)
+    return runnable.invoke({"text": str(prompt)})
 
 # Read PDF from path and return the text of each page as a list of strings
 def read_pdf(pdf_path):
@@ -25,45 +83,22 @@ def read_pdf(pdf_path):
     return text
 
 
-# Returns a response to the inputted prompt
-def get_completion(prompt, model="gpt-4"):
-    messages = [{"role": "user", "content": prompt}]
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        temperature=0,  # this is the degree of randomness of the model's output
-    )
-    return response.choices[0].message["content"]
-
-
 # use an input path to a PDF or filestream, reads each page of the PDF and returns either a question or a string containing "null"
 def get_qa(pdf_path):
     output = []
     list_pdf_text = read_pdf(pdf_path)
 
     for page_text in list_pdf_text:
-        prompt = f"""
-        Generate one multi-choice question and corresponding answer choices for the following text. Each question has 
-        *four* lettered choices and there is only *one* correct answer.  Return the question as JSON.
-        \nA sample response would look like this:\n\n {{ question: {{
-        \"content\": \"What is 2+2?\",
-        \"responses\": \[\{{\"content\: A. 4, \"correct": true\}}, \{{\"content\": B. 7\}}\, \{{\"content\": C. 1\}}\,
-        \{{\"content\": D. 22\}}\]\n}}\n}}\n\nWhile questions must be based on the text, 
-        questions must be able to be answered without direct access to the text - quiz 
-        on understanding concepts. Questions cannot have a basis on what information is or 
-        is not included in the text; only on the concepts covered in the text, and therefore questions 
-        must not contain the phrase "in the text" or any of its variations. If there is not 
-        enough information to generate a question, do not generate a question. Instead, reply with "null" \
-        ```{page_text}```
-        """
-
-        response = get_completion(prompt)
         
+        # filter out pages that do not have enough text for an adequate response 
+        if(len(page_text) > 100):
+            response = get_structured_response(page_text)
+            output.append('{"question":' + json.dumps(response) + "}")
+            print("\n\n\n", response)
+
         # comment above and uncomment below to use the dummy response that does not contact OpenAI servers
         # response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "A. To disclose or disrupt", "correct": true},{"content": "B. To entertain or educate", "correct": false},{"content": "C. To create or innovate", "correct": false},{"content": "D. To support or assist", "correct": false}]}}'
         
-        output.append(response)
-        print("\n\n\n", response)
 
     return output
 

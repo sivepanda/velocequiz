@@ -14,9 +14,9 @@
     <div class="question">{questionNumber}&period;&nbsp;{questionJSON.question.content}</div>
     <div class="responses">
         {#each questionJSON.question.responses as res}
-            <span class='response {showAnswer ? 'showanswer' : 'noanswer'} {res.correct ? 'correct': 'incorrect'}'>
+            <span class='response {showAnswer ? 'showanswer' : 'noanswer'} {res.correct == "True" ? 'correct': 'incorrect'}'>
                 {res.content}
-                <span class="material-symbols-outlined">{res.correct ? 'check': 'close'}</span>
+                <span class="material-symbols-outlined">{res.correct == "True" ? 'check': 'close'}</span>
             </span>
         {/each}
     </div>
