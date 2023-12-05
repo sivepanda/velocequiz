@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, flash, redirect, url_for
 from flask_cors import CORS
 
+from sklearn.cluster import KMeans
 from langchain.prompts import PromptTemplate
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.openai_functions import (
@@ -68,14 +69,33 @@ json_schema = {
     "required": ["content", "response"],
 }
 
+# Returns text completions from OpenAI
+def get_completion(prompt, model="gpt-4"):
+    """returns text completions from OpenAI"""
+    messages = [{"role": "user", "content": prompt}]
+    response = openai.ChatCompletion.create(
+        model=model,
+        messages=messages,
+        temperature=0, 
+    )
+    return response.choices[0].message["content"]
+
+# Returns embeddings from OpenAI
+def get_embedding(text, model="text-embedding-ada-002"):
+   """returns embeddings from OpenAI"""
+   text = text.replace("\n", " ")
+   return openai.Embedding.create(input = [text], model=model).data[0].embedding
+
 # Ensures the output is in a standard JSON format readable by the frontend
 def get_structured_response(prompt, model="gpt-3.5-turbo"):
+    """Ensures the output is in a standard JSON format readable by the frontend"""
     openai_lc = ChatOpenAI(api_key=os.getenv("OPENAI_APIKEY"), model=model, temperature=0)
     runnable = create_structured_output_runnable(output_schema=json_schema, llm=openai_lc, prompt=mcq_template)
     return runnable.invoke({"text": str(prompt)})
 
 # Read PDF from path and return the text of each page as a list of strings
 def read_pdf(pdf_path):
+    """Read PDF from path and return the text of each page as a list of strings"""
     with pdfplumber.open(pdf_path) as pdf:
         text = []
         for page in pdf.pages:
@@ -83,8 +103,46 @@ def read_pdf(pdf_path):
     return text
 
 
-# use an input path to a PDF or filestream, reads each page of the PDF and returns either a question or a string containing "null"
+def get_topics(pdf_path):
+    list_pdf_text = read_pdf(pdf_path)
+
+    full_text = []
+
+    for page_text in list_pdf_text:
+        full_text.append(page_text.replace("\n", " -- "))
+
+    # Generate embeddings
+    embeddings = [get_embedding(segment) for segment in full_text]
+
+    # Use K-means clustering
+    n_clusters = 5  # Example number of clusters
+    kmeans = KMeans(n_clusters=n_clusters)
+    kmeans.fit(embeddings)
+    labels = kmeans.labels_
+
+    # Group text segments by their cluster labels
+    topics = {}
+    for i, label in enumerate(labels):
+        if label not in topics:
+            topics[label] = []
+            print('l',label)
+        topics[label].append(full_text[i])
+
+    # convert number labels to readable text and return a dict
+    topic_groups = {}
+    for topic in topics:
+        text = ''
+        for text_segment in topics[topic]:
+            text += text_segment
+        topic_name = get_completion("What is the common topic in this text in 3 words or less?" + text)
+        topic_groups[topic_name] = text
+    
+    return json.dump(topic_groups)
+
+
+# Use an input path to a PDF or filestream, reads each page of the PDF and returns either a question or a string containing "null"
 def get_qa(pdf_path):
+    """Use an input path to a PDF or filestream, reads each page of the PDF and returns either a question or a string containing 'null'"""
     output = []
     list_pdf_text = read_pdf(pdf_path)
 
@@ -92,26 +150,25 @@ def get_qa(pdf_path):
         
         # filter out pages that do not have enough text for an adequate response 
         if(len(page_text) > 100):
-            response = get_structured_response(page_text)
-            output.append('{"question":' + json.dumps(response) + "}")
+            # response = get_structured_response(page_text)
+            # output.append('{"question":' + json.dumps(response) + "}")
+
+            # comment above and uncomment below to use the dummy response that does not contact OpenAI servers
+            response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "A. To disclose or disrupt", "correct": true},{"content": "B. To entertain or educate", "correct": false},{"content": "C. To create or innovate", "correct": false},{"content": "D. To support or assist", "correct": false}]}}'
+            output.append(response)
             print("\n\n\n", response)
 
-        # comment above and uncomment below to use the dummy response that does not contact OpenAI servers
-        # response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "A. To disclose or disrupt", "correct": true},{"content": "B. To entertain or educate", "correct": false},{"content": "C. To create or innovate", "correct": false},{"content": "D. To support or assist", "correct": false}]}}'
-        
+         
 
     return output
 
 
 ALLOWED_EXTENSIONS = {"txt", "pdf", "md"}
 
-
-# @app.route('/upload', methods=['GET', 'POST'])
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-
-@app.route("/upload", methods=["GET", "POST"])
+@app.route("/quiz", methods=["GET", "POST"])
 def upload_file():
     if request.method == "POST":
         print("Post")
@@ -136,6 +193,30 @@ def upload_file():
     else:
         return redirect(request.url)
 
+@app.route("/topics", methods=["GET", "POST"])
+def up_file():
+    if request.method == "POST":
+        print("Post")
+        # check if the post request has the file part
+        if request.files["file"] == None:
+            print("no file")
+            flash("No file part")
+            return redirect(request.url)
+        file = request.files["file"]
+        print(file)
+
+        # If the user does not select a file, the browser submits an
+        # empty file without a filename.
+        if file.filename == "" or not (allowed_file(file.filename)):
+            print("nothing selected")
+            flash("No selected file")
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            return get_topics(file.stream)
+        else:
+            return "success"
+    else:
+        return redirect(request.url)
 
 if __name__ == "__main__":
     logging.basicConfig(

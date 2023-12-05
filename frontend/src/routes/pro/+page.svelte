@@ -1,33 +1,30 @@
 <script lang="ts">
     // @ts-nocheck
     import axios, { formToJSON } from "axios";
-    import Question from "../components/Question.svelte";
+    import Question from "../../components/Question.svelte";
+	import Topic from "../../components/Topic.svelte";
 
     let files: FileList;
     let filename: string = '';
     let uploadFilename: string = '';
-    let questions = []
-    var questionNumber = 0;
     let submitReady = false;
     let submitted = false;
-    let questionsGenerated = false;
-    let showAnswers = false;
+    let topicsGenerated = false;
+    let topics = []
 
     $: uploadFilename = files ? files.item('0').name : '';
     $: filename;
     $: submitReady = uploadFilename != '';
-    $: questions;
+    $: topics;
     $: submitted;
-    $: questionsGenerated;
-    $: showAnswers;
+    $: topicsGenerated;
 
     const upload = async () => {
-        // questions = []
-
         if(!files) {
             console.log('nothing')
             return
         }
+
         submitted = true;
         console.log(files.item("0"))
         var file:File = files.item("0");
@@ -35,7 +32,7 @@
 
         const response = await axios({
             method: "post",
-            url: "http://127.0.0.1:5000/quiz",
+            url: "http://127.0.0.1:5000/topics",
             data: formData,
             headers: {
                 "Access-Control-Allow-Origin": "*",
@@ -48,18 +45,7 @@
         questionsGenerated = true
         files = null
         filename = uploadFilename
-        questions = response.data
-
-        // response.data.forEach(question => {
-        //     questions.push(question.replace(/(?:\r\n|\r|\n)/g, '<br>'));
-        //     console.log(question)
-        // });
-        
-    }
-
-    const increment = () => {
-        questionNumber += 1;
-        return questionNumber;
+        topics = response.data
     }
 </script>
 
@@ -84,32 +70,13 @@
     </div>
     
     <div>
-        <div class="questions {questionsGenerated ? 'visible' : 'invisible'}">
-            <h1>Generated Questions - <span>{filename}</span></h1>
-            <div class="sub">
-                <button on:click={() => window.print()}>Generate PDF</button>
-                <div class="showdiv">
-                    <h3>Show Answers:</h3>
-                    <label class="show-answers">
-                        <input type="checkbox" id="showAns" name="Show Answers" bind:checked={showAnswers}/>
-                        <span class="material-symbols-outlined {showAnswers ? 'visible': 'invisible'}">
-                            done
-                        </span>
-                    </label>
-                </div>
+        <div class="questions {topicsGenerated ? 'visible' : 'invisible'}">
+            <h1>Found Topics - <span>{filename}</span></h1>
+            <Question showAnswer={false} questionNumber={1}></Question>
+            {#each topics as topic}
+                <Topic topic={topic}/>
                 
-            </div>
-            <!-- <Question questionNumber={(questionNumber += 1)}></Question>
-            <Question questionNumber={(questionNumber += 1)}></Question>
-            <Question questionNumber={(questionNumber += 1)}></Question>
-            <Question questionNumber={(questionNumber += 1)}></Question> -->
-            {#each questions as question}
-                {#if question != '"null"'}
-                    {@const currentQuestion = increment()}
-                    <Question question={question} showAnswer={showAnswers} questionNumber={(currentQuestion)}></Question>
-                {/if}
             {/each}
-            
 
         </div>
         

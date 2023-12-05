@@ -14,9 +14,9 @@
     <div class="question">{questionNumber}&period;&nbsp;{questionJSON.question.content}</div>
     <div class="responses">
         {#each questionJSON.question.responses as res}
-            <span class='response {showAnswer ? 'showanswer' : 'noanswer'} {res.correct == "True" ? 'correct': 'incorrect'}'>
+            <span class='response {showAnswer ? 'showanswer' : 'noanswer'} {res.correct ? 'correct': 'incorrect'}'>
                 {res.content}
-                <span class="material-symbols-outlined">{res.correct == "True" ? 'check': 'close'}</span>
+                <span class="material-symbols-outlined">{res.correct ? 'check': 'close'}</span>
             </span>
         {/each}
     </div>
@@ -93,16 +93,17 @@
         opacity: 1;
         transition: all ease-in-out 200ms;
     }
-    .correct, .incorrect {
-        color: white;
+    
+    .correct, .correct:hover {
+        color: var(--bermuda-250);
         transition: all ease-in-out 100ms;
     }
-    .correct:hover {
-        color: var(--bermuda-250);
-        transition: all ease-in-out 200ms;
-    }
-    .incorrect:hover {
+    .incorrect, .incorrect:hover {
         color:var(--clay-250);
-        transition: all ease-in-out 200ms;
+        transition: all ease-in-out 100ms;
+    }
+    .noanswer {
+        color: white;
+        transition: all ease-in-out 100ms;
     }
 </style>
