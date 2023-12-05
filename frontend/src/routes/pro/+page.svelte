@@ -42,7 +42,7 @@
         
         console.log(response.data)
         submitted = false
-        questionsGenerated = true
+        topicsGenerated = true
         files = null
         filename = uploadFilename
         topics = response.data
@@ -70,13 +70,14 @@
     </div>
     
     <div>
-        <div class="questions {topicsGenerated ? 'visible' : 'invisible'}">
+        <div class="topics {topicsGenerated ? 'visible' : 'invisible'}">
             <h1>Found Topics - <span>{filename}</span></h1>
-            <Question showAnswer={false} questionNumber={1}></Question>
-            {#each topics as topic}
-                <Topic topic={topic}/>
-                
-            {/each}
+            <div class="topiclist">
+                {#each topics as topic}
+                    <Topic topic={topic.name}/>
+                {/each}
+            </div>
+            
 
         </div>
         
@@ -88,26 +89,6 @@
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Inter:wght@600&family=Open+Sans&display=swap');
-    @media only print {
-        .uploads {
-            display: none;
-            visibility: hidden;
-            height: 0vh;
-        }
-        .questions {
-            width: 90vw !important;
-
-        }
-        .questions h1 {
-            font-size: 30px;
-            padding: 0px;
-            align-self: flex-start;
-        }
-        .sub {
-            display: none;
-            visibility: hidden;
-        }
-    }
     .uploads {
         display: flex;
         flex-direction: column;
@@ -135,51 +116,21 @@
         width: 70%;
         justify-self: start;
     }
-    .questions {
+    .topics {
         margin-left: auto;
         margin-right: auto;
         width: 50vw;
     }
-    input[type="file"], input[type="checkbox"] {
-        display: none;
-    }
-    .sub {
-        width: 50vw;
+    .topiclist {
         display: grid;
+        width: 50vw;
         grid-template-columns: 1fr 1fr;
-        flex-direction: row;
-        gap: 4vw;
         align-items: center;
+        justify-items: center;
     }
-    .showdiv {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 10px;
-        justify-self: end;
-    }
-    .show-answers {
-        border-radius: 10px;
-        height: 4.25svh;
-        width: 4.25svh;
-        margin: 2px;
-        border: 2px solid black;
-        background-color: var(--forest-200);
-        color: var(--midnight-500);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: 100ms all cubic-bezier(.12,.59,.85,.99);
-    }
-    .show-answers:hover {
-        margin: 0px;
-        border: 4px solid black;
-        background-color: var(--forest-250);
-        transition: 200ms all cubic-bezier(1,.39,.61,.96);
-    }
-    .show-answers span {
-        font-size: 3svh;
-        user-select: none;
+
+    input[type="file"] {
+        display: none;
     }
     .file-upload {
         border-radius: 10svh;

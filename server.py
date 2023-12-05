@@ -1,11 +1,12 @@
 import json
-import openai
 import os
 import pdfplumber
 import logging
+import math
 from dotenv import load_dotenv
 from flask import Flask, request, flash, redirect, url_for
 from flask_cors import CORS
+from openai import OpenAI
 
 from sklearn.cluster import KMeans
 from langchain.prompts import PromptTemplate
@@ -16,7 +17,7 @@ from langchain.chains.openai_functions import (
 
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_APIKEY")
+client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
 
 app = Flask(__name__)
 
@@ -73,22 +74,26 @@ json_schema = {
 def get_completion(prompt, model="gpt-4"):
     """returns text completions from OpenAI"""
     messages = [{"role": "user", "content": prompt}]
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model=model,
+        stream=False,
         messages=messages,
-        temperature=0, 
+        temperature=0,  # this is the degree of randomness of the model's output
     )
-    return response.choices[0].message["content"]
+    print(str(response))
+    return response.choices[0].message.content
+
 
 # Returns embeddings from OpenAI
 def get_embedding(text, model="text-embedding-ada-002"):
-   """returns embeddings from OpenAI"""
-   text = text.replace("\n", " ")
-   return openai.Embedding.create(input = [text], model=model).data[0].embedding
+    """returns embeddings from OpenAI"""
+    text = text.replace("\n", " ")
+    return client.embeddings.create(input=[text], model=model).data[0].embedding
 
 # Ensures the output is in a standard JSON format readable by the frontend
 def get_structured_response(prompt, model="gpt-3.5-turbo"):
     """Ensures the output is in a standard JSON format readable by the frontend"""
+    print("Generating a JSON Response...")
     openai_lc = ChatOpenAI(api_key=os.getenv("OPENAI_APIKEY"), model=model, temperature=0)
     runnable = create_structured_output_runnable(output_schema=json_schema, llm=openai_lc, prompt=mcq_template)
     return runnable.invoke({"text": str(prompt)})
@@ -96,6 +101,7 @@ def get_structured_response(prompt, model="gpt-3.5-turbo"):
 # Read PDF from path and return the text of each page as a list of strings
 def read_pdf(pdf_path):
     """Read PDF from path and return the text of each page as a list of strings"""
+    print("Opening PDF...")
     with pdfplumber.open(pdf_path) as pdf:
         text = []
         for page in pdf.pages:
@@ -104,22 +110,25 @@ def read_pdf(pdf_path):
 
 
 def get_topics(pdf_path):
+    print("Reading text...")
     list_pdf_text = read_pdf(pdf_path)
-
     full_text = []
-
     for page_text in list_pdf_text:
-        full_text.append(page_text.replace("\n", " -- "))
+        if(len(page_text) > 10):
+            full_text.append(page_text.replace("\n", " -- "))
 
-    # Generate embeddings
+    print("Generating embeddings...")
     embeddings = [get_embedding(segment) for segment in full_text]
 
+    print("Grouping clusters...")
     # Use K-means clustering
-    n_clusters = 5  # Example number of clusters
+    # 1/3 length of total embeddings if num embeddings > 5 else 3
+    n_clusters = math.floor(len(embeddings) / 3) if len(embeddings) > 5 else 3
     kmeans = KMeans(n_clusters=n_clusters)
     kmeans.fit(embeddings)
     labels = kmeans.labels_
 
+    print("Sorting text...")
     # Group text segments by their cluster labels
     topics = {}
     for i, label in enumerate(labels):
@@ -128,16 +137,19 @@ def get_topics(pdf_path):
             print('l',label)
         topics[label].append(full_text[i])
 
+    print("Generating text topic names...")
     # convert number labels to readable text and return a dict
-    topic_groups = {}
+    topic_groups = []
     for topic in topics:
+        topic_obj = {}
         text = ''
         for text_segment in topics[topic]:
             text += text_segment
         topic_name = get_completion("What is the common topic in this text in 3 words or less?" + text)
-        topic_groups[topic_name] = text
-    
-    return json.dump(topic_groups)
+        topic_obj["name"] = topic_name
+        topic_obj['text'] = text
+        topic_groups.append(topic_obj)
+    return json.dumps(topic_groups)
 
 
 # Use an input path to a PDF or filestream, reads each page of the PDF and returns either a question or a string containing "null"
@@ -171,7 +183,7 @@ def allowed_file(filename):
 @app.route("/quiz", methods=["GET", "POST"])
 def upload_file():
     if request.method == "POST":
-        print("Post")
+        print("/quiz : Post")
         # check if the post request has the file part
         if request.files["file"] == None:
             print("no file")
@@ -196,7 +208,7 @@ def upload_file():
 @app.route("/topics", methods=["GET", "POST"])
 def up_file():
     if request.method == "POST":
-        print("Post")
+        print("/topics : Post")
         # check if the post request has the file part
         if request.files["file"] == None:
             print("no file")
