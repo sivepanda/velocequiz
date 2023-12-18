@@ -1,248 +1,87 @@
-<script lang="ts">
-    // @ts-nocheck
-    import axios, { formToJSON } from "axios";
-    import Question from "../components/Question.svelte";
-
-    let files: FileList;
-    let filename: string = '';
-    let uploadFilename: string = '';
-    let questions = []
-    var questionNumber = 0;
-    let submitReady = false;
-    let submitted = false;
-    let questionsGenerated = false;
-    let showAnswers = false;
-
-    $: uploadFilename = files ? files.item('0').name : '';
-    $: filename;
-    $: submitReady = uploadFilename != '';
-    $: questions;
-    $: submitted;
-    $: questionsGenerated;
-    $: showAnswers;
-
-    const upload = async () => {
-        // questions = []
-
-        if(!files) {
-            console.log('nothing')
-            return
-        }
-        submitted = true;
-        console.log(files.item("0"))
-        var file:File = files.item("0");
-        const formData = axios.toFormData({"file": file});
-
-        const response = await axios({
-            method: "post",
-            url: "http://127.0.0.1:5000/quiz",
-            data: formData,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Content-Type": "multipart/form-data"
-            }
-        })
-        
-        console.log(response.data)
-        submitted = false
-        questionsGenerated = true
-        files = null
-        filename = uploadFilename
-        questions = response.data
-
-        // response.data.forEach(question => {
-        //     questions.push(question.replace(/(?:\r\n|\r|\n)/g, '<br>'));
-        //     console.log(question)
-        // });
-        
-    }
-
-    const increment = () => {
-        questionNumber += 1;
-        return questionNumber;
-    }
-</script>
-
 <body class="page">
-    <h1>veloce<span class='logotype'>quiz</span></h1>
-    
-    <div class="uploads">
-        
-        <h1>Upload your PDF</h1>
-        <label class="file-upload">
-            <input type="file" id="file-upload" accept=".pdf" bind:files />
-            <span class="material-symbols-outlined">
-                upload_file
-            </span>
-        </label>
-        <p>{uploadFilename}</p>
-
-        <button class='{submitReady ? 'visible' : 'invisible'}' on:click={upload}>Submit</button>
-        
-        <lottie-player class="loading {submitted ? 'visible': 'invisible'}" src="https://lottie.host/d88782da-f3ef-4dad-9931-295644718e9a/uK2sClsyGy.json" background="#FFFFFF00" speed="1" style="width: 300px; height: 300px" loop autoplay direction="1" mode="normal"></lottie-player>
-    
-    </div>
-    
-    <div>
-        <div class="questions {questionsGenerated ? 'visible' : 'invisible'}">
-            <h1>Generated Questions - <span>{filename}</span></h1>
-            <div class="sub">
-                <button on:click={() => window.print()}>Generate PDF</button>
-                <div class="showdiv">
-                    <h3>Show Answers:</h3>
-                    <label class="show-answers">
-                        <input type="checkbox" id="showAns" name="Show Answers" bind:checked={showAnswers}/>
-                        <span class="material-symbols-outlined {showAnswers ? 'visible': 'invisible'}">
-                            done
-                        </span>
-                    </label>
-                </div>
-                
+    <a href="/" class="titlenm">veloce<span class="logotype">quiz</span></a>
+    <div class="types">
+        <a href="/auto-quiz-builder" class="outer">
+            <div class="topic">
+                <span class="material-symbols-outlined"> smart_toy </span>
+                <h3>Automatically build a quiz</h3>
             </div>
-            <!-- <Question questionNumber={(questionNumber += 1)}></Question>
-            <Question questionNumber={(questionNumber += 1)}></Question>
-            <Question questionNumber={(questionNumber += 1)}></Question>
-            <Question questionNumber={(questionNumber += 1)}></Question> -->
-            {#each questions as question}
-                {#if question != '"null"'}
-                    {@const currentQuestion = increment()}
-                    <Question question={question} showAnswer={showAnswers} questionNumber={(currentQuestion)}></Question>
-                {/if}
-            {/each}
-            
-
-        </div>
-        
-    
+        </a>
+        <a href="/quiz-builder" class="outer">
+            <div class="topic">
+                <span class="material-symbols-outlined"> edit_square </span>
+                <h3>Build your own quiz</h3>
+            </div>
+        </a>
     </div>
 </body>
 
-
-
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Inter:wght@600&family=Open+Sans&display=swap');
-    @media only print {
-        .uploads {
-            display: none;
-            visibility: hidden;
-            height: 0vh;
-        }
-        .questions {
-            width: 90vw !important;
 
-        }
-        .questions h1 {
-            font-size: 30px;
-            padding: 0px;
-            align-self: flex-start;
-        }
-        .sub {
-            display: none;
-            visibility: hidden;
-        }
-    }
-    .uploads {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-    .logotype {
-        font-family: 'Dela Gothic One', sans-serif;
-        color: var(--forest-200) 
-    }
     .page {
         display: flex;
         flex-direction: column;
         align-items: center;
     }
-    .loading {
-        filter: hue-rotate(220deg) saturate(.22);
+    a {
+        all: unset;
     }
-    h1 {
-        font-size: 5vh;
-    }
-    h1 > span {
-        font-weight: 400;
-    }
-    button {
-        width: 70%;
-        justify-self: start;
-    }
-    .questions {
-        margin-left: auto;
-        margin-right: auto;
-        width: 50vw;
-    }
-    input[type="file"], input[type="checkbox"] {
-        display: none;
-    }
-    .sub {
-        width: 50vw;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        flex-direction: row;
-        gap: 4vw;
-        align-items: center;
-    }
-    .showdiv {
+    .types {
+        width: 70vw;
+        height: 80vh;
+        padding-left: 10vw;
+        padding-right: 10vw;
         display: flex;
         flex-direction: row;
         align-items: center;
-        gap: 10px;
-        justify-self: end;
+        justify-content: space-between;
     }
-    .show-answers {
+    .outer {
+        --width: 30vw;
+        --height: 50vh;
+        width: var(--width);
+        height: var(--height);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-items: center;
+        justify-content: center;
         border-radius: 10px;
-        height: 4.25svh;
-        width: 4.25svh;
-        margin: 2px;
-        border: 2px solid black;
-        background-color: var(--forest-200);
-        color: var(--midnight-500);
+        margin-bottom: 2vh;
+        margin-top: 2vh;
+        transition: 250ms all ease-in;
+        cursor: pointer;
+    }
+    .outer:hover {
+        transform: scale(1.1);
+        transition: 250ms all ease-out;
+    }
+    .outer:first-of-type {
+        background: linear-gradient(45deg, #fc466b, #3f5efb);
+    }
+    .outer:nth-of-type(2) {
+        background: linear-gradient(45deg, #11998e, #38ef7d);
+    }
+    .topic {
         display: flex;
+        flex-direction: column;
         align-items: center;
+        justify-items: center;
         justify-content: center;
-        transition: 100ms all cubic-bezier(.12,.59,.85,.99);
+        text-align: center;
+        border-radius: 10px;
+        justify-self: center;
+        width: calc(var(--width) - 5px);
+        height: calc(var(--height) - 5px);
+        background-color: rgba(28, 28, 33, 0.95);
+        transition: 250ms all ease-in;
     }
-    .show-answers:hover {
-        margin: 0px;
-        border: 4px solid black;
-        background-color: var(--forest-250);
-        transition: 200ms all cubic-bezier(1,.39,.61,.96);
+    .outer:hover > .topic {
+        background-color: rgba(28, 28, 33, 0.85);
+        transition: 250ms all ease-out;
     }
-    .show-answers span {
-        font-size: 3svh;
-        user-select: none;
+    .topic > span {
+        font-size: 15vh;
     }
-    .file-upload {
-        border-radius: 10svh;
-        height: 14svh;
-        width: 14svh;
-        margin: calc(.5svh + 5px);
-        border: 5px solid black;
-        background-color: var(--forest-200);
-        color: var(--midnight-500);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: 100ms all cubic-bezier(.12,.59,.85,.99);
-    }
-    .file-upload:hover {
-        margin: calc(0svh + 0px);
-        height: 15svh;
-        width: 15svh;
-        border: 10px solid black;
-        background-color: var(--forest-250);
-        transition: 200ms all cubic-bezier(1,.39,.61,.96);
-    }
-    .file-upload span {
-        font-size: 8svh;
-        user-select: none;
-        transition: 100ms all cubic-bezier(.12,.59,.85,.99);
-    }
-    .file-upload:hover span {
-        font-size: 7svh;
-        transition: 200ms all cubic-bezier(1,.39,.61,.96);
-    }
-
 </style>

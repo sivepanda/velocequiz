@@ -25,7 +25,7 @@ CORS(app)
 
 # Define the structure of the prompt
 prompt_structure = """
-Read the following text and generate one multiple choice question based on its content. For each question, provide four options (A, B, C, D), only one of which is correct.
+Read the following text and generate {number} multiple choice questions based on its content. For each question, provide four options (A, B, C, D), only one of which is correct.
 
 Text: 
 {text}
@@ -36,13 +36,13 @@ Questions:
 # Create an instance of the PromptTemplate class
 mcq_template = PromptTemplate(
     template=prompt_structure,
-    input_variables=["text"],
+    input_variables=["text", "number"],
 )
 
 # Defines the JSON Schema to be used to format the answers
 json_schema = {
-    "title": "Person",
-    "description": "Identifying information about a person.",
+    "title": "Question",
+    "description": "Identifying information about a question.",
     "type": "object",
     "properties": {
         "content": {"title": "Content", "description": "The content of the question", "type": "string"},
@@ -80,7 +80,6 @@ def get_completion(prompt, model="gpt-4"):
         messages=messages,
         temperature=0,  # this is the degree of randomness of the model's output
     )
-    print(str(response))
     return response.choices[0].message.content
 
 
@@ -91,12 +90,27 @@ def get_embedding(text, model="text-embedding-ada-002"):
     return client.embeddings.create(input=[text], model=model).data[0].embedding
 
 # Ensures the output is in a standard JSON format readable by the frontend
-def get_structured_response(prompt, model="gpt-3.5-turbo"):
+def get_structured_response(prompt, number=1, model="gpt-3.5-turbo"):
     """Ensures the output is in a standard JSON format readable by the frontend"""
     print("Generating a JSON Response...")
+
+    numbered_json_schema = {
+        "title": "GenQuestionContainer",
+        "type": "object",
+        "properties": {
+            "question": {
+                "title": "GeneratedQuestions",
+                "type": "array",
+                "description": "list of elements",
+                "items": json_schema
+            }
+        },
+        "required": ["question"],
+    }
+
     openai_lc = ChatOpenAI(api_key=os.getenv("OPENAI_APIKEY"), model=model, temperature=0)
-    runnable = create_structured_output_runnable(output_schema=json_schema, llm=openai_lc, prompt=mcq_template)
-    return runnable.invoke({"text": str(prompt)})
+    runnable = create_structured_output_runnable(output_schema=numbered_json_schema, llm=openai_lc, prompt=mcq_template)
+    return runnable.invoke({"text": str(prompt), "number": int(number)})
 
 # Read PDF from path and return the text of each page as a list of strings
 def read_pdf(pdf_path):
@@ -134,7 +148,6 @@ def get_topics(pdf_path):
     for i, label in enumerate(labels):
         if label not in topics:
             topics[label] = []
-            print('l',label)
         topics[label].append(full_text[i])
 
     print("Generating text topic names...")
@@ -153,7 +166,7 @@ def get_topics(pdf_path):
 
 
 # Use an input path to a PDF or filestream, reads each page of the PDF and returns either a question or a string containing "null"
-def get_qa(pdf_path):
+def get_pdf_qa(pdf_path):
     """Use an input path to a PDF or filestream, reads each page of the PDF and returns either a question or a string containing 'null'"""
     output = []
     list_pdf_text = read_pdf(pdf_path)
@@ -162,15 +175,29 @@ def get_qa(pdf_path):
         
         # filter out pages that do not have enough text for an adequate response 
         if(len(page_text) > 100):
-            # response = get_structured_response(page_text)
-            # output.append('{"question":' + json.dumps(response) + "}")
+            response = get_structured_response(page_text)
 
             # comment above and uncomment below to use the dummy response that does not contact OpenAI servers
-            response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "A. To disclose or disrupt", "correct": true},{"content": "B. To entertain or educate", "correct": false},{"content": "C. To create or innovate", "correct": false},{"content": "D. To support or assist", "correct": false}]}}'
-            output.append(response)
-            print("\n\n\n", response)
+            # response = '{"question": {"content": "What could be the possible intentions of a nation-state hacker?","responses": [{"content": "A. To disclose or disrupt", "correct": true},{"content": "B. To entertain or educate", "correct": false},{"content": "C. To create or innovate", "correct": false},{"content": "D. To support or assist", "correct": false}]}}'
+            
+            for q in response['question']:
+                output.append(q)
+    
+    return output
 
-         
+
+# Use an input JSON, reads each text chunk and returns specified number of questions string containing 'null'
+def get_json_qa(json_obj):
+    """Use an input JSON, reads each text chunk and returns specified number of questions string containing 'null'"""
+    output = []
+    for text in json_obj:
+        words = text['text']
+        # filter out pages that do not have enough text for an adequate response 
+        if(len(text['text']) > 100  and (int(text['numQuestions']) != 0)):
+            response = get_structured_response(words, number=text['numQuestions'])
+            
+            for q in response['question']:
+                output.append(q)
 
     return output
 
@@ -179,6 +206,8 @@ ALLOWED_EXTENSIONS = {"txt", "pdf", "md"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
+app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20 megabytes
 
 @app.route("/quiz", methods=["GET", "POST"])
 def upload_file():
@@ -190,7 +219,6 @@ def upload_file():
             flash("No file part")
             return redirect(request.url)
         file = request.files["file"]
-        print(file)
 
         # If the user does not select a file, the browser submits an
         # empty file without a filename.
@@ -199,7 +227,7 @@ def upload_file():
             flash("No selected file")
             return redirect(request.url)
         if file and allowed_file(file.filename):
-            return get_qa(file.stream)
+            return get_pdf_qa(file.stream)
         else:
             return "success"
     else:
@@ -215,7 +243,6 @@ def up_file():
             flash("No file part")
             return redirect(request.url)
         file = request.files["file"]
-        print(file)
 
         # If the user does not select a file, the browser submits an
         # empty file without a filename.
@@ -227,6 +254,19 @@ def up_file():
             return get_topics(file.stream)
         else:
             return "success"
+    else:
+        return redirect(request.url)
+
+@app.route("/topic_quiz", methods=["GET", "POST"])
+def up_topics():
+    if request.method == "POST":
+        print("/topic_quiz : Post")
+        # check if the post request has the file part
+        if request.is_json == False:
+            return redirect(request.url)
+
+        return get_json_qa(request.get_json())
+        
     else:
         return redirect(request.url)
 

@@ -1,28 +1,26 @@
-<script type='ts'>
-    export let question = '{ "question": {"content": "Which of the following security measures is not completely effective against attacks like phishing?","responses": [{"content": "A. 2FA", "correct": false}, {"content": "B. Enhanced Logging resources", "correct": false}, {"content": "C. Changing passwords of privileged accounts", "correct": false}, {"content": "D. All of the above", "correct": true}]}}';
+<script type="ts">
+    export let question =
+        {"content": "Which of the following security measures is not completely effective against attacks like phishing?","responses": [{"content": "A. 2FA", "correct": false}, {"content": "B. Enhanced Logging resources", "correct": false}, {"content": "C. Changing passwords of privileged accounts", "correct": false}, {"content": "D. All of the above", "correct": true}]};
     export let questionNumber = 1;
     export let showAnswer = false;
 
-    var questionJSON = JSON.parse(question);
-    $: questionJSON = JSON.parse(question)
-    console.log(questionJSON.question.responses);
-
-
+    var questionJSON = question;
+    $: questionJSON = question;
+    console.log(questionJSON.responses);
 </script>
 
 <div class="outer">
-    <div class="question">{questionNumber}&period;&nbsp;{questionJSON.question.content}</div>
+    <div class="question">{questionNumber}&period;&nbsp;{questionJSON.content}</div>
     <div class="responses">
-        {#each questionJSON.question.responses as res}
-            <span class='response {showAnswer ? 'showanswer' : 'noanswer'} {res.correct ? 'correct': 'incorrect'}'>
+        {#each questionJSON.responses as res}
+            <span
+                class="response {showAnswer ? 'showanswer' : 'noanswer'} {res.correct ? 'correct' : 'incorrect'}">
                 {res.content}
-                <span class="material-symbols-outlined">{res.correct ? 'check': 'close'}</span>
+                <span class="material-symbols-outlined">{res.correct ? 'check' : 'close'}</span>
             </span>
         {/each}
     </div>
 </div>
-
-
 
 <style>
     @media only print {
@@ -93,13 +91,15 @@
         opacity: 1;
         transition: all ease-in-out 200ms;
     }
-    
-    .correct, .correct:hover {
+
+    .correct,
+    .correct:hover {
         color: var(--bermuda-250);
         transition: all ease-in-out 100ms;
     }
-    .incorrect, .incorrect:hover {
-        color:var(--clay-250);
+    .incorrect,
+    .incorrect:hover {
+        color: var(--clay-250);
         transition: all ease-in-out 100ms;
     }
     .noanswer {
